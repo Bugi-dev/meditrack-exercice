@@ -1,0 +1,7 @@
+# =============================================================
+# Inventaire Ansible - MediTrack Cloud Deployment
+# le fichier inventory.ini est généré automatiquement par Terraform (voir outputs.tf). Ceci est un exemple.
+# =============================================================
+
+[webservers]
+meditrack-web ansible_host=REMPLACER_PAR_IP_EC2 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/meditrack-key.pem

@@ -1,0 +1,135 @@
+/* ============================================================
+   MediTrack Online — Feuille de style principale
+   ============================================================ */
+
+:root {
+  --primary: #0e7c86;
+  --primary-dark: #0a5d65;
+  --accent: #2fbf71;
+  --text: #24343a;
+  --text-light: #5c6f76;
+  --bg-light: #f4f9fa;
+  --white: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --- Header / navigation ----------------------------------- */
+.site-header {
+  background: var(--white);
+  border-bottom: 1px solid #e3ecee;
+  position: sticky;
+  top: 0;
+}
+
+.nav-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo span { color: var(--primary); }
+
+nav a {
+  margin-left: 24px;
+  text-decoration: none;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+nav a.active, nav a:hover { color: var(--primary); }
+
+/* --- Section hero ------------------------------------------ */
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: var(--white);
+  text-align: center;
+  padding: 96px 0;
+}
+
+.hero-small { padding: 64px 0; }
+
+.hero h1 { font-size: 2.4rem; margin-bottom: 16px; }
+
+.hero p {
+  max-width: 640px;
+  margin: 0 auto 32px;
+  font-size: 1.1rem;
+  opacity: 0.92;
+}
+
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--white);
+  padding: 14px 32px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn:hover { background: #26a35f; }
+
+/* --- Cartes services --------------------------------------- */
+.features {
+  background: var(--bg-light);
+  padding: 72px 0;
+}
+
+.features h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 40px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(14, 124, 134, 0.08);
+}
+
+.card .icon { font-size: 2rem; margin-bottom: 12px; }
+
+.card h3 { margin-bottom: 8px; color: var(--primary-dark); }
+
+.card p { color: var(--text-light); font-size: 0.95rem; }
+
+.card a { color: var(--primary); }
+
+/* --- Footer ------------------------------------------------- */
+.site-footer {
+  background: var(--text);
+  color: #b9c6cb;
+  text-align: center;
+  padding: 32px 0;
+  font-size: 0.9rem;
+}

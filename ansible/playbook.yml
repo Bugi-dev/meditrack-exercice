@@ -1,0 +1,160 @@
+---
+# =============================================================
+# Projet   : MediTrack Cloud Deployment - GreenOps Solutions
+# Fichier  : playbook.yml
+# Objet    : Configuration complète du serveur web EC2
+#            1. Mise à jour du système
+#            2. Installation et démarrage de Nginx
+#            3. Déploiement des fichiers statiques MediTrack Online
+#            4. Sécurisation : firewall UFW, utilisateur de service,
+#               durcissement SSH
+# Exécution : ansible-playbook -i inventory.ini playbook.yml
+# =============================================================
+
+- name: Configuration et securisation du serveur web MediTrack
+  hosts: webservers
+  become: true # sudo
+
+  vars:
+    web_root: /var/www/meditrack
+    site_source: ../site/ # fichiers à déployer
+    deploy_user: meditrack-deploy
+
+  tasks:
+    # ---------------------------------------------------------
+    # 1. MISE À JOUR DU SYSTÈME
+    # ---------------------------------------------------------
+    - name: Mettre a jour le cache APT et les paquets
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: safe
+        cache_valid_time: 3600
+
+    # ---------------------------------------------------------
+    # 2. INSTALLATION DU SERVEUR WEB NGINX
+    # ---------------------------------------------------------
+    - name: Installer Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Demarrer et activer Nginx au boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    # ---------------------------------------------------------
+    # 3. DÉPLOIEMENT DU SITE STATIQUE
+    # ---------------------------------------------------------
+    - name: Creer le repertoire racine du site
+      ansible.builtin.file:
+        path: "{{ web_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Copier les fichiers statiques du site MediTrack Online
+      ansible.builtin.copy:
+        src: "{{ site_source }}"
+        dest: "{{ web_root }}/"
+        owner: www-data
+        group: www-data
+        mode: "0644"
+        directory_mode: "0755"
+
+    - name: Deployer la configuration Nginx du site
+      ansible.builtin.template:
+        src: templates/meditrack.conf
+        dest: /etc/nginx/sites-available/meditrack.conf
+        mode: "0644"
+      notify: Recharger Nginx
+
+    - name: Activer le site MediTrack
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/meditrack.conf
+        dest: /etc/nginx/sites-enabled/meditrack.conf
+        state: link
+      notify: Recharger Nginx
+
+    - name: Desactiver le site Nginx par defaut
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Recharger Nginx
+
+    # ---------------------------------------------------------
+    # 4. SÉCURITÉ : FIREWALL UFW
+    # ---------------------------------------------------------
+    - name: Installer UFW
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Autoriser SSH (22), HTTP (80) et HTTPS (443)
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - "22"
+        - "80"
+        - "443"
+
+    - name: Activer UFW avec politique par defaut deny (entrant)
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    # ---------------------------------------------------------
+    # 5. SÉCURITÉ : GESTION DES UTILISATEURS
+    # ---------------------------------------------------------
+    - name: Creer un utilisateur de service dedie au deploiement
+      ansible.builtin.user:
+        name: "{{ deploy_user }}"
+        shell: /bin/bash
+        groups: www-data
+        append: true
+        create_home: true
+
+    - name: Interdire la connexion SSH en root
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+        validate: "sshd -t -f %s"
+      notify: Redemarrer SSH
+
+    - name: Desactiver l'authentification SSH par mot de passe (cles uniquement)
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        validate: "sshd -t -f %s"
+      notify: Redemarrer SSH
+
+    # ---------------------------------------------------------
+    # 6. VÉRIFICATION FINALE
+    # ---------------------------------------------------------
+    - name: Verifier que le site repond en HTTP sur le serveur
+      ansible.builtin.uri:
+        url: http://localhost/
+        status_code: 200
+      register: check_site
+
+    - name: Afficher le resultat du test
+      ansible.builtin.debug:
+        msg: "Site MediTrack Online operationnel (HTTP {{ check_site.status }})"
+
+  handlers:
+    - name: Recharger Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+
+    - name: Redemarrer SSH
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
